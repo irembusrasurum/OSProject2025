@@ -7,14 +7,22 @@
 #define NUM_THREADS 4
 
 int arr[ARRAY_SIZE];
-int total_swaps = 0;              // Ortak sayaç (mutex gerektiren yer)
-pthread_mutex_t mutex;            // Mutex tanımı
+int total_swaps = 0;
+pthread_mutex_t mutex;
 
 // Diziyi rastgele doldur
 void fill_array() {
     for (int i = 0; i < ARRAY_SIZE; i++) {
         arr[i] = rand() % 10000;
     }
+}
+
+// Diziyi yazdır
+void print_array() {
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n\n");
 }
 
 // Dizinin belli bir kısmını sıralar
@@ -26,7 +34,7 @@ void bubble_sort(int start, int end) {
                 arr[j] = arr[j + 1];
                 arr[j + 1] = temp;
 
-                // KRİTİK BÖLGE
+                // Kritik bölge
                 pthread_mutex_lock(&mutex);
                 total_swaps++;
                 pthread_mutex_unlock(&mutex);
@@ -56,17 +64,20 @@ int main() {
     srand(time(NULL));
     fill_array();
 
-    pthread_mutex_init(&mutex, NULL);   //  Mutex başlat
+    printf("Array BEFORE sorting:\n");
+    print_array();
+
+    pthread_mutex_init(&mutex, NULL);
 
     clock_t start_time = clock();
 
-    // Threadleri oluştur
+    // Thread oluşturma
     for (int i = 0; i < NUM_THREADS; i++) {
         thread_ids[i] = i;
         pthread_create(&threads[i], NULL, thread_sort, &thread_ids[i]);
     }
 
-    // Threadlerin bitmesini bekle
+    // Threadleri bekle
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_join(threads[i], NULL);
     }
@@ -74,9 +85,12 @@ int main() {
     clock_t end_time = clock();
     double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
 
+    printf("Array AFTER sorting:\n");
+    print_array();
+
     printf("Parallel sorting time: %f seconds\n", time_spent);
     printf("Total swaps: %d\n", total_swaps);
 
-    pthread_mutex_destroy(&mutex); //  Mutex kapat
+    pthread_mutex_destroy(&mutex);
     return 0;
 }
